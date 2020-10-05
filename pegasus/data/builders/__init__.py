@@ -11,11 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Master import for all params."""
-
-# pylint: disable=unused-import
-from pegasus.params import pegasus_params
-from pegasus.params import public_params
-from pegasus.params import custom_params
-# pylint: enable=unused-import
+from pegasus.data.builders.bioasq import Bioasq
+from pegasus.data.builders.chiqa import Chiqa
+from pegasus.data.builders.duc import Duc
+from pegasus.data.builders.tac import Tac

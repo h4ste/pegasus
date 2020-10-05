@@ -16,17 +16,16 @@
 import os
 import re
 
-from absl import logging
 import numpy as np
+import tensorflow as tf
+from absl import logging
+from rouge_score import rouge_scorer
+from rouge_score import scoring
+from tensorflow.contrib import summary as contrib_summary
 
 from pegasus.eval.bleu import bleu_scorer
 from pegasus.eval.length import length_scorer
 from pegasus.eval.repetition import repetition_scorer
-import tensorflow as tf
-
-from rouge_score import rouge_scorer
-from rouge_score import scoring
-from tensorflow.contrib import summary as contrib_summary
 
 _ROUGE_METRIC = "rouge"
 _BLEU_METRIC = "bleu"
@@ -48,9 +47,9 @@ def ids2str(encoder, ids, num_reserved):
       split_locations = np.union1d(reserved_tokens, reserved_tokens + 1)
       ids_list = np.split(ids, split_locations)
       text_list = [
-          "<%d>" %
-          i if len(i) == 1 and i < num_reserved else encoder.decode(i.tolist())
-          for i in ids_list
+        "<%d>" %
+        i if len(i) == 1 and i < num_reserved else encoder.decode(i.tolist())
+        for i in ids_list
       ]
       return " ".join(text_list)
   return encoder.decode(ids.flatten().tolist())
@@ -79,9 +78,9 @@ def decode_selected_indices(decode_fn, features):
   if len(inputs.shape) != 2:
     raise ValueError("Expected prediction['inputs'] to have two dimensions.")
   return "".join([
-      "%d: %s\n" % (i, decode_fn(inputs[i]))
-      for i in selected_ids
-      if i >= 0 and i < num_inputs
+    "%d: %s\n" % (i, decode_fn(inputs[i]))
+    for i in selected_ids
+    if i >= 0 and i < num_inputs
   ])
 
 
@@ -98,7 +97,7 @@ class LogWriter(object):
     self._filenames = {}
     for name in names + additional_keys:
       filename = os.path.join(
-          model_dir, "{}-{}-{}.{}".format(name, global_step, eval_tag, "txt"))
+        model_dir, "{}-{}-{}.{}".format(name, global_step, eval_tag, "txt"))
       self._filenames[name] = filename
     self._file_handles_dict = {}
     self._enable_logging = enable_logging
@@ -106,8 +105,8 @@ class LogWriter(object):
   def __enter__(self):
     if self._enable_logging:
       self._file_handles_dict = {
-          name: tf.io.gfile.GFile(filename, "w")
-          for name, filename in self._filenames.items()
+        name: tf.io.gfile.GFile(filename, "w")
+        for name, filename in self._filenames.items()
       }
     return self
 
@@ -141,10 +140,10 @@ def text_eval(encoder,
   decode_fn = lambda x: ids2str(encoder, x, num_reserved)
   scorers_dict = {}
   scorers_dict[_ROUGE_METRIC] = rouge_scorer.RougeScorer(
-      ["rouge1", "rouge2", "rougeL", "rougeLsum"], use_stemmer=True)
+    ["rouge1", "rouge2", "rougeL", "rougeLsum"], use_stemmer=True)
   scorers_dict[_BLEU_METRIC] = bleu_scorer.BleuScorer()
   scorers_dict[_REPETITION_METRIC] = repetition_scorer.RepetitionScorer(
-      ["regs1", "regs2", "regs3", "regsTCR"])
+    ["regs1", "regs2", "regs3", "regsTCR"])
   scorers_dict[_LENGTH_METRIC] = length_scorer.LengthScorer(["word", "char"])
   aggregators_dict = {k: scoring.BootstrapAggregator() for k in scorers_dict}
 
@@ -164,9 +163,9 @@ def text_eval(encoder,
       targets = decode_fn(features[targets_key])
       preds = decode_fn(features[predictions_key])
       text_dict = {
-          "inputs": inputs_list,
-          "targets": targets,
-          "predictions": preds
+        "inputs": inputs_list,
+        "targets": targets,
+        "predictions": preds
       }
 
       for key in additional_keys:
@@ -193,7 +192,7 @@ def _write_aggregates(model_dir, global_step, eval_tag, aggregates_dict,
   """Writes text metrics to a file."""
 
   output_filename = os.path.join(
-      model_dir, "text_metrics-{}-{}.txt".format(global_step, eval_tag))
+    model_dir, "text_metrics-{}-{}.txt".format(global_step, eval_tag))
   with tf.gfile.Open(output_filename, "w") as f:
     for k, v in sorted(aggregates_dict[_ROUGE_METRIC].items()):
       f.write("%s-R,%f,%f,%f\n" %
@@ -212,8 +211,8 @@ def _write_aggregates(model_dir, global_step, eval_tag, aggregates_dict,
                v.high.prediction_ratio))
     for k, v in sorted(aggregates_dict[_LENGTH_METRIC].items()):
       f.write(
-          "%s-T,%f,%f,%f\n" %
-          (k, v.low.target_length, v.mid.target_length, v.high.target_length))
+        "%s-T,%f,%f,%f\n" %
+        (k, v.low.target_length, v.mid.target_length, v.high.target_length))
       f.write("%s-P,%f,%f,%f\n" %
               (k, v.low.prediction_length, v.mid.prediction_length,
                v.high.prediction_length))
@@ -233,25 +232,25 @@ def _write_aggregate_summaries(model_dir, global_step, eval_tag,
   eval_dir = os.path.join(model_dir, eval_tag)
   summary_writer = contrib_summary.create_file_writer(eval_dir)
   with summary_writer.as_default(), \
-      contrib_summary.always_record_summaries():
+       contrib_summary.always_record_summaries():
     for k, v in sorted(aggregates_dict[_ROUGE_METRIC].items()):
       contrib_summary.scalar(
-          "text_eval/%s-R" % k, v.mid.recall, step=global_step)
+        "text_eval/%s-R" % k, v.mid.recall, step=global_step)
       contrib_summary.scalar(
-          "text_eval/%s-P" % k, v.mid.precision, step=global_step)
+        "text_eval/%s-P" % k, v.mid.precision, step=global_step)
       contrib_summary.scalar(
-          "text_eval/%s-F" % k, v.mid.fmeasure, step=global_step)
+        "text_eval/%s-F" % k, v.mid.fmeasure, step=global_step)
     for k, v in sorted(aggregates_dict[_BLEU_METRIC].items()):
       contrib_summary.scalar("text_eval/%s" % k, v.mid.bleu, step=global_step)
     for k, v in sorted(aggregates_dict[_REPETITION_METRIC].items()):
       contrib_summary.scalar(
-          "text_eval/%s-T" % k, v.mid.target_ratio, step=global_step)
+        "text_eval/%s-T" % k, v.mid.target_ratio, step=global_step)
       contrib_summary.scalar(
-          "text_eval/%s-P" % k, v.mid.prediction_ratio, step=global_step)
+        "text_eval/%s-P" % k, v.mid.prediction_ratio, step=global_step)
     for k, v in sorted(aggregates_dict[_LENGTH_METRIC].items()):
       contrib_summary.scalar(
-          "text_eval/%s-T" % k, v.mid.target_length, step=global_step)
+        "text_eval/%s-T" % k, v.mid.target_length, step=global_step)
       contrib_summary.scalar(
-          "text_eval/%s-P" % k, v.mid.prediction_length, step=global_step)
+        "text_eval/%s-P" % k, v.mid.prediction_length, step=global_step)
       contrib_summary.scalar(
-          "text_eval/%s-R" % k, v.mid.relative_length, step=global_step)
+        "text_eval/%s-R" % k, v.mid.relative_length, step=global_step)

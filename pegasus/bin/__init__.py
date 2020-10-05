@@ -12,10 +12,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Master import for all params."""
-
-# pylint: disable=unused-import
-from pegasus.params import pegasus_params
-from pegasus.params import public_params
-from pegasus.params import custom_params
-# pylint: enable=unused-import

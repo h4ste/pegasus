@@ -50,6 +50,8 @@ def create_estimator(master,
           allow_soft_placement=True, log_device_placement=False),
       tpu_config=tpu_config.TPUConfig(iterations_per_loop),
       save_checkpoints_steps=save_checkpoints_steps,
+      save_summary_steps=save_checkpoints_steps,
+      log_step_count_steps=save_checkpoints_steps,
       keep_checkpoint_max=keep_checkpoint_max)
 
   return tpu_estimator.TPUEstimator(

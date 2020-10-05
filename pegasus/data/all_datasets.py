@@ -19,6 +19,8 @@ from pegasus.data import datasets
 # pylint: disable=unused-import
 from pegasus.data import public_pretraining_datasets
 from pegasus.data import public_supervised_datasets
+from pegasus.data import custom_supervised_datasets
+from pegasus.data import builders
 # pylint: enable=unused-import
 
 
